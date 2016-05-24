@@ -1,0 +1,19 @@
+{
+  "name": "websocket-relay",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node tests/all.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wmsmacdonald/websocket-relay.git"
+  },
+  "author": "William MacDonald",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/wmsmacdonald/websocket-relay/issues"
+  },
+  "homepage": "https://github.com/wmsmacdonald/websocket-relay#readme"
+}
