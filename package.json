@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "node tests/all.js"
+    "compile-watcher": "gulp client-compile-watcher",
+    "compile": "gulp client-compile",
+    "test": "node --harmony tests/test.js"
   },
   "repository": {
     "type": "git",
@@ -15,5 +17,18 @@
   "bugs": {
     "url": "https://github.com/wmsmacdonald/websocket-relay/issues"
   },
-  "homepage": "https://github.com/wmsmacdonald/websocket-relay#readme"
+  "homepage": "https://github.com/wmsmacdonald/websocket-relay#readme",
+  "devDependencies": {
+    "babel-preset-es2015": "^6.9.0",
+    "browserify": "^13.0.1",
+    "freeport": "^1.0.5",
+    "gulp": "^3.9.1",
+    "gulp-babel": "^6.1.2",
+    "gulp-watch": "^4.3.6",
+    "node-static": "^0.7.7",
+    "phantom": "^2.1.2",
+    "phantomjs": "^2.1.7",
+    "testing": "^0.2.3"
+  },
+  "dependencies": {}
 }
