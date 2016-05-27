@@ -7,11 +7,11 @@ let freeport = require('freeport');
 let phantom = require('phantom');
 let binPath = require('phantomjs').path;
 
-freeport(function(err, port) {
+/*freeport((err, port) => {
   if (err) throw err;
   createStaticServer(port);
-
-});
+  phantom.create().then(testTwoBrowsers);
+});*/
 
 function createStaticServer(port) {
   let fileServer = new nodeStatic.Server(path.join(__dirname, 'public'));
@@ -24,6 +24,7 @@ function createStaticServer(port) {
       fileServer.serve(request, response);
     }).resume();
   }).listen(port);
+
 
   let url = 'http://localhost:' + port + '/index.html';
 
@@ -41,5 +42,23 @@ function createStaticServer(port) {
 
   //server.close()
 
+}
+
+function testTwoBrowsers(ph, url) {
+  ph.createPage
+    .then(page => {
+      return page.open(url);
+    })
+    .then(success => {
+
+    });
+
+  ph.createPage
+    .then(page => {
+      return page.open(url);
+    })
+    .then(success => {
+
+    });
 }
 

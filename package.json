@@ -33,5 +33,8 @@
     "phantomjs": "^2.1.7",
     "testing": "^0.2.3"
   },
-  "dependencies": {}
+  "dependencies": {
+    "validate": "^3.0.1",
+    "ws": "^1.1.0"
+  }
 }
