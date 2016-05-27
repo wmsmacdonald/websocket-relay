@@ -41,7 +41,7 @@ function server(options) {
 
             call(caller, answerer)
             // got answer
-              .then((laneId) => {
+              .then(laneId => {
                 caller.lanes[answerer.id].remoteLaneId = laneId;
                 answerer.lanes[caller.id].localLaneId = laneId;
                 answer(answerer, caller, message.callbackNum);
@@ -70,15 +70,6 @@ function server(options) {
 
 }
 
-function relay(lane, message) {
-  wsSendObject(lane.remoteClient.ws, {
-    relay: {
-      laneId: lane.remoteLaneId,
-      message: message
-    }
-  });
-}
-
 function call(caller, answerer) {
   let answererCallbackNum = answerer.numMessages++;
   wsSendObject(answerer.ws, {
@@ -103,6 +94,15 @@ function answer(answerer, callbackNum, caller) {
       answererId: answerer.id
     },
     num: callbackNum
+  });
+}
+
+function relay(lane, message) {
+  wsSendObject(lane.remoteClient.ws, {
+    relay: {
+      laneId: lane.remoteLaneId,
+      message: message
+    }
   });
 }
 
@@ -141,7 +141,7 @@ function isValidJSON(string) {
   catch (e) {
     return false;
   }
-}d
+}
 
 /**
  *
