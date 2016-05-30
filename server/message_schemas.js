@@ -1,7 +1,22 @@
+"use strict";
+
 let schema = require('validate');
 
 module.exports = {
-  callMessage: schema({
+  authentication: schema({
+    authentication: {
+      clientId: {
+        type: 'number',
+        required: true
+      },
+      token: {
+        type: 'string',
+        required: true
+      }
+    }
+  }),
+
+  call: schema({
     call: {
       laneId: {
         type: 'number',
