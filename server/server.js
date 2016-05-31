@@ -4,16 +4,12 @@ let WebSocketServer = require('ws').Server;
 
 let messageSchemas = require('./message_schemas');
 
-function server(port) {
-  console.log('called server()');
-
+function server(port, callback) {
   let clients = [];
 
   let wss = new WebSocketServer({
     port: port
-  });
-
-  wss.close();
+  }, callback);
 
   wss.on('connection', ws => {
 
@@ -45,8 +41,7 @@ function server(port) {
     if (messageSchemas.relay.validate(message).length === 0) {
       // if client has a relay connection to the target
       if (client.channels.hasOwnProperty(String(message.relay.remoteClientId))) {
-
-        relay(client.channels[message.relay.remoteClientId], message.relay.message);
+        sendRelayMessage(client.channels[message.relay.remoteClientId], message.relay.message);
       }
       else {
         console.log('Client does not have a relay lane to this client.')
@@ -87,15 +82,17 @@ function server(port) {
       return { id: client.id, token: client.token };
     },
     registerRelayChannel(clientId1, clientId2) {
+      let client1 = clients[clientId1]
+      let client2 = clients[clientId2];
       // if there does exist a client with either of the ids
-      if (typeof clientId1 !== 'number' || clients[clientId1] === undefined) {
+      if (typeof clientId1 !== 'number' || client1 === undefined) {
         throw { name: 'ClientNotFoundException', message: 'clientId1 must be the id of an existing client'}
       }
-      if (typeof clientId2 !== 'number' || clients[clientId2] === undefined) {
+      if (typeof clientId2 !== 'number' || client2 === undefined) {
         throw { name: 'ClientNotFoundException', message: 'clientId2 must be the id of an existing client'}
       }
       // if clients already have a channel
-      if (clientId1.channels.hasOwnProperty(clientId2) || clientId1.channels.hasOwnProperty(clientId2)) {
+      if (client1.channels.hasOwnProperty(clientId2) || client2.channels.hasOwnProperty(clientId2)) {
         throw { name: 'ClientsAlreadyHaveChannel', message: 'these clients already have a channel'}
       }
 
@@ -113,9 +110,10 @@ function server(port) {
     },
     close: function close() {
       clients.forEach(client => {
-        client.ws.close();
+        if (client.ws) {
+          client.ws.close();
+        }
       });
-      console.log('server closed');
       wss.close();
     }
   }
