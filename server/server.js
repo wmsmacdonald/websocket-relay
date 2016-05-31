@@ -3,19 +3,19 @@ let hat = require('hat');
 let WebSocketServer = require('ws').Server;
 
 let messageSchemas = require('./message_schemas');
-let simpleClientMatch = require('./simple_client_match');
 
-function server(options) {
+function server(port) {
+  console.log('called server()');
 
   let clients = [];
 
-
   let wss = new WebSocketServer({
-    port: options.port
+    port: port
   });
 
-  wss.on('connection', ws => {
+  wss.close();
 
+  wss.on('connection', ws => {
 
     ws.on('message', function(message) {
       // if valid json
@@ -23,40 +23,19 @@ function server(options) {
         message = JSON.parse(message);
 
         // if message fits authenticate message schema
-        if (messageSchemas.authentication.validate(message).length === 0) {
-          let client = authenticate(message.authentication.clientId, message.authentication.clientId);
+        if (messageSchemas.authenticatedMessage.validate(message).length === 0) {
+          let client = authenticate(message.authentication);
           if (client) {
-            client.onAuthenticated(ws);
+            if (message.message !== undefined) {
+              client.onAuthenticatedMessage(message.message);
+            }
+            while (client.relaySendQueue.length > 1) {
+              sendRelayMessage(ws, null, message);
+            }
           }
           else {
+            console.log('incorrect token');
             close();
-          }
-        }
-
-        else if (messageSchemas.call.validate(message).length === 0) {
-          let answerer = typeof options.matchClient == "function"
-            ? options.matchClient(caller, clients)
-            : simpleClientMatch(caller, clients);
-
-          if (answerer) {
-            caller.channels[answerer.id] = {
-              remoteClient: answerer
-            };
-            answerer.channels[caller.id] = {
-              remoteClient: caller
-            };
-
-            // laneId identifies the relay lane on the client side
-            caller.channels[answerer.id].localLaneId = message.call.laneId;
-            answerer.channels[caller.id].remoteLaneId = message.call.laneId;
-
-            call(caller, answerer)
-            // got answer
-              .then(laneId => {
-                caller.channels[answerer.id].remoteLaneId = laneId;
-                answerer.channels[caller.id].localLaneId = laneId;
-                answer(answerer, caller, message.callbackNum);
-              });
           }
         }
       }
@@ -89,6 +68,18 @@ function server(options) {
         channels: {},
         onAuthenticatedMessage: (message) => {
 
+          if (message.relay) {
+            // if client is allowed to relay messages to remote client
+            if (client.channels.hasOwnProperty(message.relay.remoteClientId)) {
+              let channel = client.channels[message.relay.remoteClientId];
+              if (channel.remoteChannelId === undefined) {
+                channel.relaySendQueue.push(message);
+              }
+              else {
+                sendRelayMessage(channel.client.ws, channel.client.id, message.relay.message);
+              }
+            }
+          }
         }
       };
       clients.push(client);
@@ -110,56 +101,43 @@ function server(options) {
 
       // add channel for client 1
       clients[clientId1].channels[clientId2] = {
+        relaySendQueue: [],
         remoteClient: clients[clientId2]
       };
 
       // add channel for client 2
       clients[clientId2].channels[clientId1] = {
+        relaySendQueue: [],
         remoteClient: clients[clientId1]
       };
+    },
+    close: function close() {
+      clients.forEach(client => {
+        client.ws.close();
+      });
+      console.log('server closed');
+      wss.close();
     }
   }
 }
 
-function call(caller, answerer) {
-  let answererCallbackNum = answerer.numMessages++;
-  wsSendObject(answerer.ws, {
-    call: {
-      callerId: caller.id,
-      callbackNum: answererCallbackNum
-    }
-  });
-
-  return new Promise(resolve => {
-    answerer.ws.on('message', function(message) {
-      if (messageSchemas.answer.validate(message).length === 0 && message.num === answererCallbackNum) {
-        resolve(message.answer.laneId);
-      }
-    });
-  });
+function authenticate(authentication, clients) {
+  let client = clients[authentication.clientId];
+  if (client === undefined || client.token !== authentication.token) {
+    return false;
+  }
+  return client;
 }
 
-function answer(answerer, callbackNum, caller) {
-  wsSendObject(caller.ws, {
-    answer: {
-      answererId: answerer.id
-    },
-    num: callbackNum
-  });
-}
-
-function relay(channel, message) {
-  wsSendObject(channel.remoteClient.ws, {
+function sendRelayMessage(senderId, recipientWs, message) {
+  wsSendObject(recipientWs, {
     relay: {
-      laneId: channel.remoteLaneId,
-      message: message
+      remoteClientId: senderId,
+      message: {
+        message
+      }
     }
   });
-}
-
-function onClose(client) {
-  clients[client.id] = undefined;
-  console.log('closed');
 }
 
 function isValidJSON(string) {
@@ -186,11 +164,4 @@ function wsSendObject(ws, obj, errorCallback) {
   });
 }
 
-module.exports = {
-  server: server,
-  call: call,
-  answer: answer,
-  relay: relay,
-  matchClient: matchClient,
-  isValidJSON: isValidJSON
-};
+module.exports = server;

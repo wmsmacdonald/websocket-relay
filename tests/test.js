@@ -5,13 +5,13 @@ let path = require('path');
 let http = require('http');
 let phantom = require('phantom');
 let binPath = require('phantomjs').path;
-let uuid = require('node-uuid');
-let ws = require('ws');
+let WebSocketServer = require('ws').Server;
 let freeport = require('freeport-promise');
+let assert = require('assert');
+let enableDestroy = require('server-destroy');
+
 
 let relay = require('../');
-
-let duplicateKeyExceptionOccurred = exceptionOccurred.bind('DuplicateKeyException');
 
 /*freeport((err, port) => {
   if (err) throw err;
@@ -20,23 +20,47 @@ let duplicateKeyExceptionOccurred = exceptionOccurred.bind('DuplicateKeyExceptio
 });*/
 
 
-freeport()
+/*freeport()
   .then(port => {
     testing.run([
-      test_createRelayServer.bind(null, port),
-      test_registerClient.bind(null, port),
-      test_registerRelayConnection.bind(null, port),
-      test_registerRelayConnectionNeitherExisting.bind(null, port),
-      test_registerRelayConnectionOneExisting.bind(null, port)
-    ], () => {
-      console.log('Tests done.');
-    });
+      test_createRelayServer
+    ], testing.showComplete);
+  });*/
+
+let tests = [
+  test_createRelayServer
+  /*test_registerClient.bind(null, port),
+   test_registerRelayConnection.bind(null, port),
+   test_registerRelayConnectionNeitherExisting.bind(null, port),
+   test_registerRelayConnectionOneExisting.bind(null, port)*/
+];
+
+freeport()
+  .then(port => {
+    //test_createRelayServer(port);
   });
 
-function test_createRelayServer(port, callback) {
-  let server = new relay.Server(port);
-  server.close();
-  testing.success(callback);
+let wss = new WebSocketServer({ port: 8080 }, () => {
+  wss.close();
+});
+
+enableDestroy(wss._server);
+console.log(wss._server.destroy.toString());
+
+console.log('dafd');
+wss.close((err) => {
+  console.log('closed');
+  require('active-handles').print();
+
+});
+
+function test_createRelayServer(port) {
+  console.log('sdfad');
+  let server = relay.server(port, () => {
+    server.close();
+  });
+  console.log(server);
+  //server.close();
 }
 
 function test_registerClient(port, callback) {
@@ -145,3 +169,4 @@ function exceptionOccurred(exceptionName, procedure) {
     }
   }
 }
+
