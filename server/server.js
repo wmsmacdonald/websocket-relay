@@ -1,6 +1,6 @@
 "use strict";
 let hat = require('hat');
-let WebSocketServer = require('ws').Server;
+let WebSocketServer = require('uws').Server;
 
 let messageSchemas = require('./message_schemas');
 
@@ -38,19 +38,6 @@ function server(port, callback) {
 
     });
 
-    if (messageSchemas.relay.validate(message).length === 0) {
-      // if client has a relay connection to the target
-      if (client.channels.hasOwnProperty(String(message.relay.remoteClientId))) {
-        sendRelayMessage(client.channels[message.relay.remoteClientId], message.relay.message);
-      }
-      else {
-        console.log('Client does not have a relay lane to this client.')
-      }
-    }
-    else {
-      console.log('Unrecognized message: ' + JSON.stringify(message));
-    }
-
   });
 
   // back-end interface to the relay server
@@ -82,7 +69,7 @@ function server(port, callback) {
       return { id: client.id, token: client.token };
     },
     registerRelayChannel(clientId1, clientId2) {
-      let client1 = clients[clientId1]
+      let client1 = clients[clientId1];
       let client2 = clients[clientId2];
       // if there does exist a client with either of the ids
       if (typeof clientId1 !== 'number' || client1 === undefined) {
