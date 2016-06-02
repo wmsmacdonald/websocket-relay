@@ -1,9 +1,6 @@
 "use strict";
 
 let testing = require('testing');
-let path = require('path');
-let http = require('http');
-
 
 let relay = require('../');
 

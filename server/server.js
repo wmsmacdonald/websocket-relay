@@ -11,6 +11,10 @@ function server(port, callback) {
     port: port
   }, callback);
 
+
+  // tracks unrecognized ws messages, etc.
+  let errors = [];
+
   wss.on('connection', ws => {
 
     ws.on('message', function(message) {
@@ -18,51 +22,67 @@ function server(port, callback) {
       if (isValidJSON(message)) {
         message = JSON.parse(message);
 
-        // if message fits authenticate message schema
-        if (messageSchemas.authenticatedMessage.validate(message).length === 0) {
-          let client = authenticate(message.authentication);
+        // authentication and message
+        if (messageSchemas.authenticatedRelayMessage.validate(message).length === 0) {
+          let client = authenticate(message.authentication, clients);
           if (client) {
-            if (message.message !== undefined) {
-              client.onAuthenticatedMessage(message.message);
+            client.ws = ws;
+            let channel = client.channels[message.relay.targetId];
+            if (channel) {
+              let target = channel.targetClient;
+              if (channel.targetClient.ws) {
+                sendRelayMessage(client.id, channel.targetClient.ws, message.relay.message);
+                sendQueuedRelayMessages(client);
+              }
+              else {
+                target.relaySendQueue.push({
+                  senderId: client.id,
+                  message: message.relay.message
+                });
+              }
             }
-            while (client.relaySendQueue.length > 1) {
-              sendRelayMessage(ws, null, message);
+            else {
+              errors.push('client tried to send through a channel that was not registered');
             }
+
           }
           else {
-            console.log('incorrect token');
-            close();
+            errors.push('incorrect token');
           }
         }
+
+        // just authentication
+        else if (messageSchemas.authentication.validate(message).length === 0) {
+          let client = authenticate(message.authentication, clients);
+          if (client) {
+            client.ws = ws;
+            sendQueuedRelayMessages(client);
+          }
+          else {
+            errors.push('incorrect token');
+          }
+        }
+
+        else {
+          errors.push('Message unrecognized: ' + JSON.stringify(message).substring(0, 500));
+        }
+      }
+      else {
+        errors.push('invalid JSON');
       }
 
     });
 
   });
 
-  // back-end interface to the relay server
+  // interface to the relay server
   return {
     registerClient: function registerClient() {
       let client = {
         id: clients.length,
-        numMessages: 0, // used as sequence for callback numbers
         token: hat(),
         channels: {},
-        onAuthenticatedMessage: (message) => {
-
-          if (message.relay) {
-            // if client is allowed to relay messages to remote client
-            if (client.channels.hasOwnProperty(message.relay.remoteClientId)) {
-              let channel = client.channels[message.relay.remoteClientId];
-              if (channel.remoteChannelId === undefined) {
-                channel.relaySendQueue.push(message);
-              }
-              else {
-                sendRelayMessage(channel.client.ws, channel.client.id, message.relay.message);
-              }
-            }
-          }
-        }
+        relaySendQueue: []
       };
       clients.push(client);
 
@@ -85,24 +105,28 @@ function server(port, callback) {
 
       // add channel for client 1
       clients[clientId1].channels[clientId2] = {
-        relaySendQueue: [],
-        remoteClient: clients[clientId2]
+        targetClient: clients[clientId2]
       };
 
       // add channel for client 2
       clients[clientId2].channels[clientId1] = {
-        relaySendQueue: [],
-        remoteClient: clients[clientId1]
+        targetClient: clients[clientId1]
       };
     },
     close: function close() {
-      clients.forEach(client => {
-        if (client.ws) {
-          client.ws.close();
-        }
-      });
+      // HACK: using private method so that server actually terminates
+      wss.httpServer.close();
       wss.close();
-    }
+    },
+    errors: errors
+  }
+}
+
+function sendQueuedRelayMessages(client) {
+
+  while (client.relaySendQueue.length > 0) {
+    let relay = client.relaySendQueue.shift();
+    sendRelayMessage(relay.senderId, client.ws, relay.message);
   }
 }
 
@@ -117,10 +141,8 @@ function authenticate(authentication, clients) {
 function sendRelayMessage(senderId, recipientWs, message) {
   wsSendObject(recipientWs, {
     relay: {
-      remoteClientId: senderId,
-      message: {
-        message
-      }
+      senderId: senderId,
+      message: message
     }
   });
 }
@@ -142,11 +164,7 @@ function isValidJSON(string) {
  * @param errorCallback
  */
 function wsSendObject(ws, obj, errorCallback) {
-  ws = Object.prototype.toString.call(ws) === '[Object object]' ? [ws] : ws;
-
-  ws.forEach((socket) => {
-    socket.send(JSON.stringify(obj), errorCallback);
-  });
+  ws.send(JSON.stringify(obj), errorCallback);
 }
 
 module.exports = server;
