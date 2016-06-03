@@ -2,16 +2,40 @@
 let testing = require('testing');
 let freeport = require('freeport-promise');
 
-let unitTests = require('./unit');
-let integrationTests = require('./integration');
-let tests = unitTests.concat(integrationTests);
+let clientUnitTests = require('./client_unit');
+let serverUnitTests = require('./server_unit');
+let serverIntegrationTests = require('./server_integration');
+let systemTests = require('./system');
 
 freeport()
   .then(port => {
-    let testsWithPort = tests.map(test => {
-      return test.bind(null, port);
+    testing.run(clientUnitTests, () => {
+      console.log('Client tests finished');
+
+      // bind port to first param of all server tests
+      testing.run(serverUnitTests.map(test => {
+        return test.bind(null, port);
+      }), () => {
+        console.log('Server tests finished');
+
+        testing.run(serverIntegrationTests.map(test => {
+          return test.bind(null, port);
+        }), () => {
+          console.log('Server integration tests finished');
+
+          freeport()
+            .then(port2 => {
+              testing.run(systemTests.map(test => {
+                return test.bind(null, port, port2);
+              }), () => {
+                console.log('System tests finished');
+              });
+            });
+
+        });
+
+      });
     });
-    testing.run(testsWithPort);
   });
 
 

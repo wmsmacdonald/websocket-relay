@@ -2,7 +2,7 @@
 
 let testing = require('testing');
 
-let relay = require('../');
+let relay = require('../index');
 
 let unitTests = [
   test_createRelayServer,

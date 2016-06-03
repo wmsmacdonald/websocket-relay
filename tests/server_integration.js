@@ -3,15 +3,15 @@
 let testing = require('testing');
 let WebSocket = require('ws');
 
-let relay = require('../');
+let relay = require('../index');
 
-let integrationTests = [
+let tests = [
   test_WSConnect,
   test_oneClientAuthentication,
   test_relay
 ];
 
-module.exports = integrationTests;
+module.exports = tests;
 
 function test_WSConnect(port, callback) {
   let server = relay.server(port, () => {
@@ -107,8 +107,10 @@ function test_relay(port, callback) {
 
     Promise.all([relay1P, relay2P])
       .then(() => {
+        server.close();
         testing.success(callback);
       });
 
   });
 }
+
