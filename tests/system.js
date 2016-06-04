@@ -4,33 +4,89 @@ let testing = require('testing');
 let phantom = require('phantom');
 let express = require('express');
 
+let P = {
+  spread: (promise, ...args) => {
+    return promise
+      .then((result) => {
+        return Promise.resolve(result, ...args);
+      });
+  }
+};
+P.prototype = Object.create(Promise);
+
 let relay = require('../index');
 
 let tests = [
-  test
+  test1
 ];
 
 module.exports = tests;
 
+function test1(port1, port2, callback) {
+  let pageUrl = 'http://localhost:' + port1 + '/index.html';
+
+  let phInstance;
+  let page;
+  let staticServer;
+
+  let pageP = phantom.create()
+    .then(instance => {
+      phInstance = instance;
+      return instance.createPage();
+    });
+
+  let pageOpenedP = Promise.all([createStaticServer(port1), pageP])
+    .then(([SServer, p]) => {
+      staticServer = SServer;
+      page = p;
+      return page.open(pageUrl)
+    });
+
+  Promise.all([createRelayServer(port2), pageOpenedP])
+    .then(([relayServer, status]) => {
+      console.log(relayServer);
+    });
+
+}
+
+function spread(promise, ...args) {
+  return promise
+    .then((result) => {
+      return Promise.resolve(result, ...args);
+    });
+}
+
 function test(port1, port2, callback) {
   let staticServer;
   let phInstance;
-  let page;
   let relayServer;
+  let outObj;
   let close = () => {
     page.close();
     phInstance.exit();
     staticServer.close();
   };
 
-  Promise.all([createStaticServer(port1), openPhantomPage('http://localhost:' + port1 + '/index.html'), createRelayServer(port2)])
+  let pageUrl = 'http://localhost:' + port1 + '/index.html';
+
+
+  let pagesCreatedP = phantom.create()
+    .then(instance => {
+      phInstance = instance;
+      outObj = phInstance.createOutObject();
+      outObj.urls = [];
+      return Promise.all([
+        openPhantomPage(pageUrl, phInstance),
+        openPhantomPage(pageUrl, phInstance)
+      ]);
+    });
+
+
+  Promise.all([createStaticServer(port1), pagesCreatedP, createRelayServer(port2)])
     .then(values => {
       staticServer = values[0];
-      phInstance = values[1].phInstance;
-      page = values[1].page;
-      page.onConsoleMessage = function(msg, lineNum, sourceId) {
-        console.log('CONSOLE: ' + msg + ' (from line #' + lineNum + ' in "' + sourceId + '")');
-      };
+      let page1 = values[1][0];
+      let page2 = values[1][2];
       relayServer = values[2];
 
       let client1 = relayServer.registerClient();
@@ -38,12 +94,21 @@ function test(port1, port2, callback) {
 
       relayServer.registerRelayChannel(client1.id, client2.id);
 
-      page.onCallback = function(data) {
-        console.log('CALLBACK: ' + JSON.stringify(data));
+      page1.onConsoleMessage = function(msg) {
+        console.log(msg);
       };
 
-      return page.evaluateAsync(function(port, client1, client2) {
-        var relay = new WebSocketRelay('ws://localhost:' + port, {
+      page1.property('onResourceRequested', function(requestData, networkRequest, out) {
+        out.urls.push('hello');
+      }, outObj);
+
+      outObj.property('urls').then(function(urls){
+        console.log(urls);
+      });
+
+      return page.evaluate(function(out) {
+        out.urls.push('hello');
+        /*var relay = new WebSocketRelay('ws://localhost:' + port, {
           clientId: client1.id,
           token: client1.token
         }, function() {
@@ -53,18 +118,22 @@ function test(port1, port2, callback) {
           channel.on('message', function() {
             console.log('')
           })
-        });
+        });*/
 
-      }, port2, client1, client2);
+        return 'hello';
+
+      }, outObj);
+
 
 
     })
-    .then((val) => {
+    /*.then((val) => {
       console.log(val);
-      //close();
+      console.log(outObj);
+      close();
 
       //testing.success(callback);
-    })
+    })*/
 
 }
 
@@ -81,20 +150,16 @@ function createStaticServer(port) {
   });
 }
 
-function openPhantomPage(url) {
-  let phInstance;
+
+function openPhantomPage(url,phInstance) {
   let page;
-  return phantom.create()
-    .then(instance => {
-      phInstance = instance;
-      return instance.createPage();
-    })
+  return phInstance.createPage()
     .then((p) => {
       page = p;
       return page.open(url);
     })
     .then(() => {
-      return Promise.resolve({ phInstance: phInstance, page: page})
+      return Promise.resolve(page);
     });
 }
 
