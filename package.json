@@ -1,7 +1,7 @@
 {
   "name": "websocket-relay",
   "version": "0.1.0",
-  "description": "Easily set up communication channels between clients",
+  "description": "Easily set up communication channels between browser clients",
   "main": "index.js",
   "scripts": {
     "compile-watcher": "RUNTIME=browser gulp client-compile-watcher",
