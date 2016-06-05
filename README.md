@@ -40,7 +40,7 @@ Now you can freely send and receive data through the channel to the other client
 ```html
 <script type="text/javascript">
 channel.send('hello world');
-channe.on('message', function(message) {
+channel.on('message', function(message) {
   console.log(message);
 });
 </script>
