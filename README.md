@@ -1,5 +1,5 @@
 # websocket-relay
-### Easily set up communication channels between clients
+### Easily set up communication channels between browser clients
 
 
 On the server:
