@@ -2,7 +2,6 @@
 
 let EventEmitter = require('./EventEmitter');
 
-//console.log(require);
 if (typeof WebSocket === 'undefined') {
   var WebSocket = module.require('ws');
 }
@@ -10,12 +9,10 @@ if (typeof WebSocket === 'undefined') {
 function WebSocketRelay(address, authentication, callback) {
   validateParameters(address, authentication);
 
-  let onMessageCallbacks = [];
   let relayQueues = {};
   let channels = {};
 
   let socket = new WebSocket(address);
-  this.socket = socket;
 
   let self = this;
   socket.onopen = () => {
@@ -84,7 +81,7 @@ function RelayChannel(socket, authentication, targetId, queuedRelays) {
   this.emitQueuedMessages = () => {
     if (queuedRelays) {
       while (queuedRelays.length > 0) {
-        this.emit('message', queuedRelays.shift());
+        this.emit('message', queuedRelays.pop());
       }
     }
   }
