@@ -2,6 +2,4 @@
 
 let path = require('path');
 
-module.exports = {
-  server: require(path.join(__dirname, 'lib', 'server'))
-};
+module.exports = require(path.join(__dirname, 'lib', 'server'));

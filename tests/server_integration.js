@@ -3,7 +3,7 @@
 let testing = require('testing');
 let WebSocket = require('ws');
 
-let relay = require('../index');
+let RelayServer = require('../index');
 
 let tests = [
   test_WSConnect,
@@ -14,7 +14,7 @@ let tests = [
 module.exports = tests;
 
 function test_WSConnect(port, callback) {
-  let server = relay.server(port, () => {
+  let server = new RelayServer(port, () => {
     let ws = new WebSocket('ws://localhost:' + port);
 
     ws.on('open', () => {
@@ -25,7 +25,7 @@ function test_WSConnect(port, callback) {
 }
 
 function test_oneClientAuthentication(port, callback) {
-  let server = relay.server(port, () => {
+  let server = new RelayServer(port, () => {
     let client = server.registerClient();
 
     let ws = new WebSocket('ws://localhost:' + port);
@@ -43,19 +43,14 @@ function test_oneClientAuthentication(port, callback) {
     // TODO hook into wss message event
     setTimeout(() => {
       server.close();
-      if (server.errors.length > 0) {
-        testing.failure('Server errors: ' + server.errors, callback);
-      }
-      else {
-        testing.success(callback);
-      }
+      testing.success(callback);
     }, 100)
 
   });
 }
 
 function test_relay(port, callback) {
-  let server = relay.server(port, () => {
+  let server = new RelayServer(port, () => {
     let client1 = server.registerClient();
     let client2 = server.registerClient();
     server.registerRelayChannel(client1.id, client2.id);
@@ -92,16 +87,20 @@ function test_relay(port, callback) {
     let relay1P = new Promise((resolve, reject) => {
       ws1.once('message', (message) => {
         message = JSON.parse(message);
-        testing.assertEquals(message.relay.message, 'from client 2');
-        resolve();
+        if (message.relay) {
+          testing.assertEquals(message.relay.message, 'from client 2');
+          resolve();
+        }
       });
     });
 
     let relay2P = new Promise((resolve, reject) => {
       ws2.once('message', (message) => {
         message = JSON.parse(message);
-        testing.assertEquals(message.relay.message, 'from client 1');
-        resolve();
+        if (message.relay) {
+          testing.assertEquals(message.relay.message, 'from client 1');
+          resolve();
+        }
       });
     });
 

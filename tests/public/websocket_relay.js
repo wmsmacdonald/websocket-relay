@@ -65,100 +65,127 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 /* 1 */
 /***/function (module, exports, __webpack_require__) {
 
-	"use strict";
+	/* WEBPACK VAR INJECTION */(function (global) {
+		"use strict";
 
-	var EventEmitter = __webpack_require__(2);
+		var EventEmitter = __webpack_require__(2);
 
-	function WebSocketRelay(address, authentication, callback) {
-		validateParameters(address, authentication);
+		if (WebSocket === undefined) {
+			WebSocket = global.require('ws');
+		}
 
-		var onMessageCallbacks = [];
+		function WebSocketRelay(address, authentication, callback) {
+			validateParameters(address, authentication);
 
-		var ws = new WebSocket(address);
+			var onMessageCallbacks = [];
+			var relayQueues = {};
+			var channels = {};
 
-		ws.onopen = function () {
-			callback();
-			wsSendObject(ws, {
-				authentication: {
-					clientId: authentication.clientId,
-					token: authentication.token
+			var socket = new WebSocket(address);
+			this.socket = socket;
+
+			socket.onopen = function () {
+				if (typeof callback === 'function') {
+					callback();
 				}
-			});
-		};
-
-		this.createChannel = function (targetId) {
-			return new RelayChannel(ws, authentication, targetId, onMessageCallbacks);
-		};
-
-		ws.onmessage = function (event) {
-			if (isValidJSON(event.message)) {
-				(function () {
-					var message = JSON.parse(event.message);
-					if (message.relay) {
-						onMessageCallbacks.forEach(function (onMessageCallback) {
-							onMessageCallback(message.relay);
-						});
+				wsSendObject(socket, {
+					authentication: {
+						clientId: authentication.clientId,
+						token: authentication.token
 					}
-				})();
-			}
-		};
-	}
+				});
+			};
 
-	function RelayChannel(ws, authentication, targetId, onMessageCallbacks) {
-		var _this = this;
+			this.createChannel = function (targetId) {
+				var queuedRelays = relayQueues[targetId];
+				return new RelayChannel(socket, authentication, targetId, queuedRelays);
+			};
 
-		onMessageCallbacks.push(function (relay) {
-			if (relay.senderId === targetId) {
-				_this.emit('message', [relay.message]);
-			}
-		});
-
-		this.send = function (message) {
-			wsSendObject(ws, {
-				authentication: authentication,
-				relay: {
-					targetId: targetId,
-					message: message
+			socket.onmessage = function (event) {
+				if (isValidJSON(event.data)) {
+					var message = JSON.parse(event.data);
+					if (message.error) {
+						throw message.error;
+					} else if (message.relay) {
+						var channel = channels[message.relay.senderId];
+						if (channel) {
+							channel.emit('message', message.relay.message);
+						} else {
+							var queuedRelays = relayQueues[message.relay.senderId];
+							if (queuedRelays === undefined) {
+								relayQueues[message.relay.senderId] = [message.relay.message];
+							} else {
+								queuedRelays.push(message.relay.message);
+							}
+						}
+					} else {
+						throw 'unrecognized ws message';
+					}
 				}
-			});
-		};
-	}
-
-	RelayChannel.prototype = Object.create(EventEmitter.prototype);
-
-	function validateParameters(address, authentication) {
-		if (address === undefined) {
-			throw { name: 'MissingParameterException', message: 'First parameter is required' };
-		} else if (authentication === undefined) {
-			throw { name: 'MissingParameterException', message: 'Second parameter is required' };
-		} else if (authentication.clientId === undefined) {
-			throw { name: 'PropertyRequiredException', message: 'clientId property is required in authentication object' };
-		} else if (authentication.token === undefined) {
-			throw { name: 'PropertyRequiredException', message: 'token property is required in authentication object' };
+			};
 		}
-	}
 
-	function isValidJSON(string) {
-		window.foo = string;
-		try {
-			JSON.parse(string);
-			return true;
-		} catch (e) {
-			return false;
+		function RelayChannel(socket, authentication, targetId, queuedRelays) {
+			var _this = this;
+
+			this.send = function (message) {
+				wsSendObject(socket, {
+					authentication: authentication,
+					relay: {
+						targetId: targetId,
+						message: message
+					}
+				});
+			};
+
+			this.emitQueuedMessages = function () {
+				if (queuedRelays) {
+					while (queuedRelays.length > 0) {
+						_this.emit('message', queuedRelays.shift());
+					}
+				}
+			};
 		}
-	}
 
-	/**
-  * Stringifies object and sends it through the Web Socket
-  * @param ws            ws object or array of ws objects
-  * @param obj
-  * @param errorCallback
-  */
-	function wsSendObject(ws, obj) {
-		ws.send(JSON.stringify(obj));
-	}
+		RelayChannel.prototype = Object.create(EventEmitter.prototype);
 
-	module.exports = WebSocketRelay;
+		function validateParameters(address, authentication) {
+			if (address === undefined) {
+				throw new Error('first parameter is required');
+			} else if (authentication === undefined) {
+				throw new Error('second parameter is required');
+			} else if (authentication.clientId === undefined) {
+				throw new Error('clientId property is required in authentication object');
+			} else if (authentication.token === undefined) {
+				throw new Error('token property is required in authentication object');
+			}
+		}
+
+		function isValidJSON(string) {
+			window.foo = string;
+			try {
+				JSON.parse(string);
+				return true;
+			} catch (e) {
+				return false;
+			}
+		}
+
+		/**
+   * Stringifies object and sends it through the Web Socket
+   * @param ws            ws object or array of ws objects
+   * @param obj
+   * @param errorCallback
+   */
+		function wsSendObject(socket, obj) {
+			socket.send(JSON.stringify(obj));
+		}
+
+		module.exports = WebSocketRelay;
+		/* WEBPACK VAR INJECTION */
+	}).call(exports, function () {
+		return this;
+	}());
 
 	/***/
 },

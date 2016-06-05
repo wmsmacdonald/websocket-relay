@@ -23,7 +23,7 @@ function test_validateParametersMissing(callback) {
     testing.failure(callback);
   }
   catch (ex) {
-    if (ex.name === 'MissingParameterException') {
+    if (ex.message === 'first parameter is required') {
       testing.success(callback);
     }
     else {
@@ -38,7 +38,7 @@ function test_validateParametersMissingProperty(callback) {
     testing.failure(callback);
   }
   catch (ex) {
-    if (ex.name === 'PropertyRequiredException') {
+    if (ex.message === 'token property is required in authentication object') {
       testing.success(callback);
     }
     else {

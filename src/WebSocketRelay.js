@@ -2,16 +2,28 @@
 
 let EventEmitter = require('./EventEmitter');
 
+//console.log(require);
+if (typeof WebSocket === 'undefined') {
+  var WebSocket = module.require('ws');
+}
+
 function WebSocketRelay(address, authentication, callback) {
   validateParameters(address, authentication);
 
   let onMessageCallbacks = [];
+  let relayQueues = {};
+  let channels = {};
 
-  let ws = new WebSocket(address);
+  let socket = new WebSocket(address);
+  this.socket = socket;
 
-  ws.onopen = () => {
-    callback();
-    wsSendObject(ws, {
+  let self = this;
+  socket.onopen = () => {
+    self.emit('open');
+    if (typeof callback === 'function') {
+      callback();
+    }
+    wsSendObject(socket, {
       authentication: {
         clientId: authentication.clientId,
         token: authentication.token
@@ -20,30 +32,47 @@ function WebSocketRelay(address, authentication, callback) {
   };
 
   this.createChannel = (targetId) => {
-    return new RelayChannel(ws, authentication, targetId, onMessageCallbacks);
+    let queuedRelays = relayQueues[targetId];
+    let channel = new RelayChannel(socket, authentication, targetId, queuedRelays);
+    channels[targetId] = channel;
+    return channel;
   };
 
-  ws.onmessage = (event) => {
-    if (isValidJSON(event.message)) {
-      let message = JSON.parse(event.message);
-      if (message.relay) {
-        onMessageCallbacks.forEach((onMessageCallback) => {
-          onMessageCallback(message.relay)
-        });
+  socket.onmessage = function(event) {
+    if (isValidJSON(event.data)) {
+      let message = JSON.parse(event.data);
+      if (message.error) {
+        throw message.error;
+      }
+      else if (message.relay) {
+        let channel = channels[message.relay.senderId];
+        if (channel) {
+          channel.emit('message', message.relay.message);
+        }
+        else {
+          let queuedRelays = relayQueues[message.relay.senderId];
+          if (queuedRelays === undefined) {
+            relayQueues[message.relay.senderId] = [message.relay.message];
+          }
+          else {
+            queuedRelays.push(message.relay.message);
+          }
+        }
+
+      }
+      else {
+        throw 'unrecognized ws message';
       }
     }
   }
 }
 
-function RelayChannel(ws, authentication, targetId, onMessageCallbacks) {
-  onMessageCallbacks.push(relay => {
-      if (relay.senderId === targetId) {
-        this.emit('message', [relay.message]);
-      }
-  });
+WebSocketRelay.prototype = Object.create(EventEmitter.prototype);
+
+function RelayChannel(socket, authentication, targetId, queuedRelays) {
 
   this.send = (message) => {
-    wsSendObject(ws, {
+    wsSendObject(socket, {
       authentication: authentication,
       relay: {
         targetId: targetId,
@@ -51,27 +80,35 @@ function RelayChannel(ws, authentication, targetId, onMessageCallbacks) {
       }
     });
   };
+
+  this.emitQueuedMessages = () => {
+    if (queuedRelays) {
+      while (queuedRelays.length > 0) {
+        this.emit('message', queuedRelays.shift());
+      }
+    }
+  }
+
 }
 
 RelayChannel.prototype = Object.create(EventEmitter.prototype);
 
 function validateParameters(address, authentication) {
   if (address === undefined) {
-    throw { name: 'MissingParameterException', message: 'First parameter is required' };
+    throw new Error('first parameter is required');
   }
   else if (authentication === undefined) {
-    throw { name: 'MissingParameterException', message: 'Second parameter is required' };
+    throw new Error('second parameter is required');
   }
   else if (authentication.clientId === undefined) {
-    throw { name: 'PropertyRequiredException', message: 'clientId property is required in authentication object' }
+    throw new Error('clientId property is required in authentication object');
   }
   else if (authentication.token === undefined) {
-    throw { name: 'PropertyRequiredException', message: 'token property is required in authentication object' }
+    throw new Error('token property is required in authentication object');
   }
 }
 
 function isValidJSON(string) {
-  window.foo = string;
   try {
     JSON.parse(string);
     return true;
@@ -87,8 +124,8 @@ function isValidJSON(string) {
  * @param obj
  * @param errorCallback
  */
-function wsSendObject(ws, obj) {
-  ws.send(JSON.stringify(obj));
+function wsSendObject(socket, obj) {
+  socket.send(JSON.stringify(obj));
 }
 
 module.exports = WebSocketRelay;

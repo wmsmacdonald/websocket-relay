@@ -4,9 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "compile-watcher": "gulp client-compile-watcher",
-    "compile": "gulp client-compile",
-    "test": "node --harmony tests/test.js"
+    "compile-watcher": "RUNTIME=browser gulp client-compile-watcher",
+    "compile": "RUNTIME=browser gulp client-compile",
+    "test": "ENVIRONMENT=dev node --harmony tests/test.js"
   },
   "repository": {
     "type": "git",

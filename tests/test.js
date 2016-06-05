@@ -23,17 +23,12 @@ freeport()
         }), () => {
           console.log('Server integration tests finished');
 
-          freeport()
-            .then(port2 => {
-              testing.run(systemTests.map(test => {
-                return test.bind(null, port, port2);
-              }), 30000, () => {
-                console.log('System tests finished');
-              });
-            });
-
+          testing.run(systemTests.map(test => {
+            return test.bind(null, port);
+          }), 10000, () => {
+            console.log('System tests finished');
+          });
         });
-
       });
     });
   });

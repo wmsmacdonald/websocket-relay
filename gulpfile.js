@@ -6,7 +6,8 @@ var uglify = require('gulp-uglify');
 var rename = require('gulp-rename');
 
 gulp.task('client-compile-watcher', function() {
-    watch('./src/*', compileClientJavascripts)
+  compileClientJavascripts();
+  watch('./src/*', compileClientJavascripts)
 });
 
 gulp.task('client-compile', compileClientJavascripts);
