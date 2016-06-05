@@ -25,7 +25,7 @@ freeport()
 
           testing.run(systemTests.map(test => {
             return test.bind(null, port);
-          }), 10000, () => {
+          }), 1000, () => {
             console.log('System tests finished');
           });
         });

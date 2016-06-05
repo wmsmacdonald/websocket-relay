@@ -1,7 +1,6 @@
 "use strict";
 
 let testing = require('testing');
-let phantom = require('phantom');
 let express = require('express');
 const ws = require('ws');
 
