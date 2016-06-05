@@ -30,8 +30,6 @@
     "gulp-watch": "^4.3.6",
     "gulp-webpack": "^1.5.0",
     "rewire": "^2.5.1",
-    "server-destroy": "^1.0.1",
-    "static-server": "^2.0.2",
     "testing": "^0.2.3"
   },
   "dependencies": {
