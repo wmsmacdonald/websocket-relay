@@ -3,7 +3,7 @@
 
 
 On the server:
-```javavascript
+```javascript
 var RelayServer = require('websocket-relay');
 var relayServer = new RelayServer(4000);
 
