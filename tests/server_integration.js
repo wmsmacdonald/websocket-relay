@@ -14,7 +14,9 @@ let tests = [
 module.exports = tests;
 
 function test_WSConnect(port, callback) {
-  let server = new RelayServer(port, () => {
+  let server = new RelayServer({ port });
+
+  server.on('listening', () => {
     let ws = new WebSocket('ws://localhost:' + port);
 
     ws.on('open', () => {
@@ -25,9 +27,10 @@ function test_WSConnect(port, callback) {
 }
 
 function test_oneClientAuthentication(port, callback) {
-  let server = new RelayServer(port, () => {
-    let client = server.registerClient();
+  let server = new RelayServer({ port });
 
+  server.on('listening', () => {
+    let client = server.registerClient();
     let ws = new WebSocket('ws://localhost:' + port);
 
     ws.on('open', () => {
@@ -36,21 +39,18 @@ function test_oneClientAuthentication(port, callback) {
           clientId: client.id,
           token: client.token
         }
-      }));
+      }), undefined, () => {
+        server.close();
+        testing.success(callback);
+      });
     });
-
-    // delay so that server has time to receive the message
-    // TODO hook into wss message event
-    setTimeout(() => {
-      server.close();
-      testing.success(callback);
-    }, 100)
-
   });
 }
 
 function test_relay(port, callback) {
-  let server = new RelayServer(port, () => {
+  let server = new RelayServer({ port: port });
+
+  server.on('listening', () => {
     let client1 = server.registerClient();
     let client2 = server.registerClient();
     server.registerRelayChannel(client1.id, client2.id);
@@ -63,7 +63,9 @@ function test_relay(port, callback) {
         authentication: {
           clientId: client1.id,
           token: client1.token
-        },
+        }
+      }));
+      ws1.send(JSON.stringify({
         relay: {
           message: 'from client 1',
           targetId: client2.id
@@ -76,7 +78,10 @@ function test_relay(port, callback) {
         authentication: {
           clientId: client2.id,
           token: client2.token
-        },
+        }
+      }));
+
+      ws2.send(JSON.stringify({
         relay: {
           message: 'from client 2',
           targetId: client1.id
@@ -109,7 +114,6 @@ function test_relay(port, callback) {
         server.close();
         testing.success(callback);
       });
-
   });
 }
 

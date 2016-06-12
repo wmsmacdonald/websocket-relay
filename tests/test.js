@@ -20,14 +20,14 @@ freeport()
 
         testing.run(serverIntegrationTests.map(test => {
           return test.bind(null, port);
-        }), () => {
-          console.log('Server integration tests finished');
+        }), 1000000, () => {
+          /*console.log('Server integration tests finished');
 
           testing.run(systemTests.map(test => {
             return test.bind(null, port);
-          }), 1000, () => {
+          }), () => {
             console.log('System tests finished');
-          });
+          });*/
         });
       });
     });

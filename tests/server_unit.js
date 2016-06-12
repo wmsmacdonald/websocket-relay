@@ -15,14 +15,17 @@ let unitTests = [
 module.exports = unitTests;
 
 function test_createRelayServer(port, callback) {
-  let server = new RelayServer(port, () => {
+  let server = new RelayServer({ port });
+
+  server.on('listening', () => {
+    console.log('listening');
     server.close();
     testing.success(callback);
-  });
+  })
 }
 
 function test_registerClient(port, callback) {
-  let server = new RelayServer(port, () => {
+  let server = new RelayServer({ port }, () => {
     let { token, id } = server.registerClient();
     testing.assert(token !== undefined && token !== null);
     testing.assert(id !== undefined && id !== null);
@@ -32,7 +35,7 @@ function test_registerClient(port, callback) {
 }
 
 function test_registerRelayConnection(port, callback) {
-  let server = new RelayServer(port, () => {
+  let server = new RelayServer({ port }, () => {
     let { token: client1Token, id: client1Id }  = server.registerClient();
     let { key: client2Token, id: client2Id }  = server.registerClient();
     server.registerRelayChannel(client1Id, client2Id);
@@ -42,7 +45,7 @@ function test_registerRelayConnection(port, callback) {
 }
 
 function test_registerRelayConnectionNeitherExisting(port, callback) {
-  let server = new RelayServer(port, () => {
+  let server = new RelayServer({ port }, () => {
     let didExceptionOccur = exceptionOccurred('ClientNotFoundException', () => {
       server.registerRelayChannel('id that does not exist', 'second id that does not exist');
     });
@@ -53,7 +56,7 @@ function test_registerRelayConnectionNeitherExisting(port, callback) {
 }
 
 function test_registerRelayConnectionOneExisting(port, callback) {
-  let server = new RelayServer(port, () => {
+  let server = new RelayServer({ port }, () => {
     let { key: _, id: client1Id }  = server.registerClient();
     let exceptionOccurredFirstExisting = exceptionOccurred('ClientNotFoundException', () => {
       server.registerRelayChannel(client1Id, 'second id that does not exist');
