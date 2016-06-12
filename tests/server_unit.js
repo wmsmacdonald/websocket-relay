@@ -18,7 +18,6 @@ function test_createRelayServer(port, callback) {
   let server = new RelayServer({ port });
 
   server.on('listening', () => {
-    console.log('listening');
     server.close();
     testing.success(callback);
   })

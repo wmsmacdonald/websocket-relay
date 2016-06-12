@@ -16,7 +16,7 @@ let tests = [
 module.exports = tests;
 
 function test_sendBetweenNoRelayQueue(port, callback) {
-  let relayServer = new RelayServer(port);
+  let relayServer = new RelayServer({ port });
 
   let client1 = relayServer.registerClient();
   let client2 = relayServer.registerClient();
@@ -70,7 +70,7 @@ function test_sendBetweenNoRelayQueue(port, callback) {
 }
 
 function test_sendRelayQueueSocketNotConnected(port, callback) {
-  let relayServer = new RelayServer(port);
+  let relayServer = new RelayServer({ port });
 
   let client1 = relayServer.registerClient();
   let client2 = relayServer.registerClient();
@@ -81,8 +81,8 @@ function test_sendRelayQueueSocketNotConnected(port, callback) {
       clientId: client1.id,
       token: client1.token
     });
-    let channel1 = relay1.createChannel(client2.id);
     relay1.on('open', () => {
+      let channel1 = relay1.createChannel(client2.id);
       channel1.send('from client 1');
 
       // must go on the event loop so the ws server requests go through first
@@ -105,7 +105,7 @@ function test_sendRelayQueueSocketNotConnected(port, callback) {
 }
 
 function test_sendRelayQueueSocketConnected(port, callback) {
-  let relayServer = new RelayServer(port);
+  let relayServer = new RelayServer({ port });
 
   let client1 = relayServer.registerClient();
   let client2 = relayServer.registerClient();

@@ -16,21 +16,22 @@ function WebSocketRelay(address, authentication, callback) {
 
   let self = this;
   socket.onopen = () => {
-    self.emit('open');
     if (typeof callback === 'function') {
       callback();
     }
+    // make sure to send authentication before opening to send relays
     wsSendObject(socket, {
       authentication: {
         clientId: authentication.clientId,
         token: authentication.token
       }
     });
+    self.emit('open');
   };
 
   this.createChannel = (targetId) => {
     let queuedRelays = relayQueues[targetId];
-    let channel = new RelayChannel(socket, authentication, targetId, queuedRelays);
+    let channel = new RelayChannel(socket, targetId, queuedRelays);
     channels[targetId] = channel;
     return channel;
   };
@@ -66,11 +67,10 @@ function WebSocketRelay(address, authentication, callback) {
 
 WebSocketRelay.prototype = Object.create(EventEmitter.prototype);
 
-function RelayChannel(socket, authentication, targetId, queuedRelays) {
+function RelayChannel(socket, targetId, queuedRelays) {
 
   this.send = (message) => {
     wsSendObject(socket, {
-      authentication: authentication,
       relay: {
         targetId: targetId,
         message: message

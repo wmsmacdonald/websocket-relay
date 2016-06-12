@@ -65,26 +65,26 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 /* 1 */
 /***/function (module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function (global) {
+	/* WEBPACK VAR INJECTION */(function (module) {
 		"use strict";
 
-		var EventEmitter = __webpack_require__(2);
+		var EventEmitter = __webpack_require__(3);
 
-		if (WebSocket === undefined) {
-			WebSocket = global.require('ws');
+		if (typeof WebSocket === 'undefined') {
+			var WebSocket = module.require('ws');
 		}
 
 		function WebSocketRelay(address, authentication, callback) {
 			validateParameters(address, authentication);
 
-			var onMessageCallbacks = [];
 			var relayQueues = {};
 			var channels = {};
 
 			var socket = new WebSocket(address);
-			this.socket = socket;
 
+			var self = this;
 			socket.onopen = function () {
+				self.emit('open');
 				if (typeof callback === 'function') {
 					callback();
 				}
@@ -98,7 +98,9 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 			this.createChannel = function (targetId) {
 				var queuedRelays = relayQueues[targetId];
-				return new RelayChannel(socket, authentication, targetId, queuedRelays);
+				var channel = new RelayChannel(socket, targetId, queuedRelays);
+				channels[targetId] = channel;
+				return channel;
 			};
 
 			socket.onmessage = function (event) {
@@ -125,12 +127,13 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 			};
 		}
 
-		function RelayChannel(socket, authentication, targetId, queuedRelays) {
+		WebSocketRelay.prototype = Object.create(EventEmitter.prototype);
+
+		function RelayChannel(socket, targetId, queuedRelays) {
 			var _this = this;
 
 			this.send = function (message) {
 				wsSendObject(socket, {
-					authentication: authentication,
 					relay: {
 						targetId: targetId,
 						message: message
@@ -141,7 +144,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 			this.emitQueuedMessages = function () {
 				if (queuedRelays) {
 					while (queuedRelays.length > 0) {
-						_this.emit('message', queuedRelays.shift());
+						_this.emit('message', queuedRelays.pop());
 					}
 				}
 			};
@@ -162,7 +165,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 		}
 
 		function isValidJSON(string) {
-			window.foo = string;
 			try {
 				JSON.parse(string);
 				return true;
@@ -183,13 +185,27 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 		module.exports = WebSocketRelay;
 		/* WEBPACK VAR INJECTION */
-	}).call(exports, function () {
-		return this;
-	}());
+	}).call(exports, __webpack_require__(2)(module));
 
 	/***/
 },
 /* 2 */
+/***/function (module, exports) {
+
+	module.exports = function (module) {
+		if (!module.webpackPolyfill) {
+			module.deprecate = function () {};
+			module.paths = [];
+			// module.parent = undefined by default
+			module.children = [];
+			module.webpackPolyfill = 1;
+		}
+		return module;
+	};
+
+	/***/
+},
+/* 3 */
 /***/function (module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__; /*!
