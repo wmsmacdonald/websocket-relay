@@ -20,7 +20,7 @@ function test_createRelayServer(port, callback) {
   server.on('listening', () => {
     server.close();
     testing.success(callback);
-  })
+  });
 }
 
 function test_registerClient(port, callback) {
@@ -38,6 +38,7 @@ function test_registerRelayConnection(port, callback) {
     let { token: client1Token, id: client1Id }  = server.registerClient();
     let { key: client2Token, id: client2Id }  = server.registerClient();
     server.registerRelayChannel(client1Id, client2Id);
+    console.log(server);
     server.close();
     testing.success(callback);
   });
@@ -56,7 +57,7 @@ function test_registerRelayConnectionNeitherExisting(port, callback) {
 
 function test_registerRelayConnectionOneExisting(port, callback) {
   let server = new RelayServer({ port }, () => {
-    let { key: _, id: client1Id }  = server.registerClient();
+    let { id: client1Id }  = server.registerClient();
     let exceptionOccurredFirstExisting = exceptionOccurred('ClientNotFoundException', () => {
       server.registerRelayChannel(client1Id, 'second id that does not exist');
     });

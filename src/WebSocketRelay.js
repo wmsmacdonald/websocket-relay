@@ -39,10 +39,7 @@ function WebSocketRelay(address, authentication, callback) {
   socket.onmessage = function(event) {
     if (isValidJSON(event.data)) {
       let message = JSON.parse(event.data);
-      if (message.error) {
-        throw message.error;
-      }
-      else if (message.relay) {
+      if (message.relay) {
         let channel = channels[message.relay.senderId];
         if (channel) {
           channel.emit('message', message.relay.message);

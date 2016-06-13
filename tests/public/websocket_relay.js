@@ -84,16 +84,17 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 			var self = this;
 			socket.onopen = function () {
-				self.emit('open');
 				if (typeof callback === 'function') {
 					callback();
 				}
+				// make sure to send authentication before opening to send relays
 				wsSendObject(socket, {
 					authentication: {
 						clientId: authentication.clientId,
 						token: authentication.token
 					}
 				});
+				self.emit('open');
 			};
 
 			this.createChannel = function (targetId) {
@@ -106,9 +107,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 			socket.onmessage = function (event) {
 				if (isValidJSON(event.data)) {
 					var message = JSON.parse(event.data);
-					if (message.error) {
-						throw message.error;
-					} else if (message.relay) {
+					if (message.relay) {
 						var channel = channels[message.relay.senderId];
 						if (channel) {
 							channel.emit('message', message.relay.message);
