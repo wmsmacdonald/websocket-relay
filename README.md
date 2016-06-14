@@ -1,5 +1,6 @@
 # websocket-relay
 ### Easily set up communication channels between browser clients
+#### Great for creating WebRTC signaling servers
 
 
 On the server:
@@ -10,8 +11,8 @@ var relayServer = new RelayServer({ port: 4000 });
 var client1 = relayServer.registerClient();
 var client2 = relayServer.registerClient();
 
-console.log(client1.id, client1.token) // => 0 11ac27cd0c17bd1c7ba9aa4285979aea
-console.log(client2.id, client2.token) // => 1 7c2e2bc62cb06d7b90651cd4a2f369fb
+console.log(client1.id, client1.token); // => 0 11ac27cd0c17bd1c7ba9aa4285979aea
+console.log(client2.id, client2.token); // => 1 7c2e2bc62cb06d7b90651cd4a2f369fb
 
 relayServer.registerRelayChannel(client1.id, client2.id);
 ```
