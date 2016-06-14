@@ -20,7 +20,7 @@ In the first browser client:
 ```html
 <script type="text/javascript" src="websocket_relay.min.js"></script>
 <script type="text/javascript">
-var relay = new WebSocketRelay('ws://localhost:4000', {
+var relay = new WebSocketRelay('localhost:4000', {
   clientId: 0,
   token: '11ac27cd0c17bd1c7ba9aa4285979aea',
 });
@@ -31,7 +31,7 @@ In the second browser client:
 ```html
 <script type="text/javascript" src="websocket_relay.min.js"></script>
 <script type="text/javascript">
-var relay = new WebSocketRelay('ws://localhost:4000', {
+var relay = new WebSocketRelay('localhost:4000', {
   clientId: 1,
   token: '7c2e2bc62cb06d7b90651cd4a2f369fb'
 });
