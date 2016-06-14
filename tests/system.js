@@ -22,7 +22,7 @@ function test_sendBetweenNoRelayQueue(port, callback) {
     relayServer.registerRelayChannel(client1.id, client2.id);
 
     let client1P = new Promise((resolve, reject) => {
-      let relay = new WebSocketRelay('ws://localhost:' + port, {
+      let relay = new WebSocketRelay('localhost:' + port, {
         clientId: client1.id,
         token: client1.token
       });
@@ -31,7 +31,7 @@ function test_sendBetweenNoRelayQueue(port, callback) {
     });
 
     let client2P = new Promise((resolve, reject) => {
-      let relay = new WebSocketRelay('ws://localhost:' + port, {
+      let relay = new WebSocketRelay('localhost:' + port, {
         clientId: client2.id,
         token: client2.token
       });
@@ -72,7 +72,7 @@ function test_sendRelayQueueSocketNotConnected(port, callback) {
     let client2 = relayServer.registerClient();
     relayServer.registerRelayChannel(client1.id, client2.id);
 
-    let relay1 = new WebSocketRelay('ws://localhost:' + port, {
+    let relay1 = new WebSocketRelay('localhost:' + port, {
       clientId: client1.id,
       token: client1.token
     });
@@ -82,7 +82,7 @@ function test_sendRelayQueueSocketNotConnected(port, callback) {
 
       // must go on the event loop so the ws server requests go through first
       setTimeout(() => {
-        let relay2 = new WebSocketRelay('ws://localhost:' + port, {
+        let relay2 = new WebSocketRelay('localhost:' + port, {
           clientId: client2.id,
           token: client2.token
         });
@@ -105,7 +105,7 @@ function test_sendRelayQueueSocketConnected(port, callback) {
     relayServer.registerRelayChannel(client1.id, client2.id);
 
     let client1P = new Promise((resolve, reject) => {
-      let relay = new WebSocketRelay('ws://localhost:' + port, {
+      let relay = new WebSocketRelay('localhost:' + port, {
         clientId: client1.id,
         token: client1.token
       });
@@ -114,7 +114,7 @@ function test_sendRelayQueueSocketConnected(port, callback) {
     });
 
     let client2P = new Promise((resolve, reject) => {
-      let relay = new WebSocketRelay('ws://localhost:' + port, {
+      let relay = new WebSocketRelay('localhost:' + port, {
         clientId: client2.id,
         token: client2.token
       });

@@ -12,7 +12,7 @@ function WebSocketRelay(address, authentication, callback) {
   let relayQueues = {};
   let channels = {};
 
-  let socket = new WebSocket(address);
+  let socket = new WebSocket('ws://' + address);
 
   let self = this;
   socket.onopen = () => {

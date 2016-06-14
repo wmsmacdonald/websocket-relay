@@ -80,7 +80,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 			var relayQueues = {};
 			var channels = {};
 
-			var socket = new WebSocket(address);
+			var socket = new WebSocket('ws://' + address);
 
 			var self = this;
 			socket.onopen = function () {
