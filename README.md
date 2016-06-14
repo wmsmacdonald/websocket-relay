@@ -120,3 +120,13 @@ The client received a relay message
 `function () { }`
 
 The client formed a connection with the relay server (`channel.send()` can be called).
+
+# Testing
+
+`npm test`
+
+Try upgrading node if you receive syntax errors.
+
+### Compiling Client Code
+
+`npm compile`
