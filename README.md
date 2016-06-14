@@ -40,7 +40,7 @@ var channel = relay.createChannel(0);
 </script>
 ```
 
-Now you can freely send and receive data through the channel to the other client:
+Now you can freely send and receive data through the channel to the other browser client:
 ```html
 <script type="text/javascript">
 channel.send('hello world');
