@@ -1,8 +1,8 @@
 {
   "name": "websocket-relay",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Easily set up communication channels between browser clients",
-  "keywords": ["webrtc", "signal", "negotionate"],
+  "keywords": ["webrtc", "signal", "signaling", "negotiate", "negotiating"],
   "main": "index.js",
   "scripts": {
     "compile-watcher": "RUNTIME=browser gulp client-compile-watcher",
