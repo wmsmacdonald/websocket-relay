@@ -16,13 +16,11 @@ let tests = [
 module.exports = tests;
 
 function test_sendBetweenNoRelayQueue(port, callback) {
-  let relayServer = new RelayServer({ port });
+  let relayServer = new RelayServer({ port }, () => {
+    let client1 = relayServer.registerClient();
+    let client2 = relayServer.registerClient();
+    relayServer.registerRelayChannel(client1.id, client2.id);
 
-  let client1 = relayServer.registerClient();
-  let client2 = relayServer.registerClient();
-  relayServer.registerRelayChannel(client1.id, client2.id);
-
-  relayServer.on('listening', () => {
     let client1P = new Promise((resolve, reject) => {
       let relay = new WebSocketRelay('ws://localhost:' + port, {
         clientId: client1.id,
@@ -62,21 +60,18 @@ function test_sendBetweenNoRelayQueue(port, callback) {
 
         Promise.all([receivedMessage1P, receivedMessage2P])
           .then(() => {
-            relayServer.close();
-            testing.success(callback);
+            relayServer.close(testing.success.bind(null, callback));
           });
       });
   });
 }
 
 function test_sendRelayQueueSocketNotConnected(port, callback) {
-  let relayServer = new RelayServer({ port });
+  let relayServer = new RelayServer({ port }, () => {
+    let client1 = relayServer.registerClient();
+    let client2 = relayServer.registerClient();
+    relayServer.registerRelayChannel(client1.id, client2.id);
 
-  let client1 = relayServer.registerClient();
-  let client2 = relayServer.registerClient();
-  relayServer.registerRelayChannel(client1.id, client2.id);
-
-  relayServer.on('listening', () => {
     let relay1 = new WebSocketRelay('ws://localhost:' + port, {
       clientId: client1.id,
       token: client1.token
@@ -95,23 +90,20 @@ function test_sendRelayQueueSocketNotConnected(port, callback) {
         relay2.on('open', () => {
           channel2.on('message', message => {
             testing.assertEquals(message, 'from client 1');
-            relayServer.close();
-            testing.success(callback);
+            relayServer.close(testing.success.bind(null, callback));
           })
         });
-      }, 200);
+      }, 100);
     });
   });
 }
 
 function test_sendRelayQueueSocketConnected(port, callback) {
-  let relayServer = new RelayServer({ port });
+  let relayServer = new RelayServer({ port }, () => {
+    let client1 = relayServer.registerClient();
+    let client2 = relayServer.registerClient();
+    relayServer.registerRelayChannel(client1.id, client2.id);
 
-  let client1 = relayServer.registerClient();
-  let client2 = relayServer.registerClient();
-  relayServer.registerRelayChannel(client1.id, client2.id);
-
-  relayServer.on('listening', () => {
     let client1P = new Promise((resolve, reject) => {
       let relay = new WebSocketRelay('ws://localhost:' + port, {
         clientId: client1.id,
@@ -138,8 +130,7 @@ function test_sendRelayQueueSocketConnected(port, callback) {
           let channel2 = relay2.createChannel(client1.id);
           channel2.on('message', message => {
             testing.assertEquals(message, 'from client 1');
-            relayServer.close();
-            testing.success(callback);
+            relayServer.close(testing.success.bind(null, callback));
           });
           channel2.emitQueuedMessages();
         }, 200);

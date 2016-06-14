@@ -15,11 +15,9 @@ let unitTests = [
 module.exports = unitTests;
 
 function test_createRelayServer(port, callback) {
-  let server = new RelayServer({ port });
-
-  server.on('listening', () => {
-    server.close();
-    testing.success(callback);
+  let server = new RelayServer({ port }, function() {
+    // close server and when done call success
+    server.close(testing.success.bind(null, callback));
   });
 }
 
@@ -28,8 +26,7 @@ function test_registerClient(port, callback) {
     let { token, id } = server.registerClient();
     testing.assert(token !== undefined && token !== null);
     testing.assert(id !== undefined && id !== null);
-    server.close();
-    testing.success(callback);
+    server.close(testing.success.bind(null, callback));
   });
 }
 
@@ -38,9 +35,7 @@ function test_registerRelayConnection(port, callback) {
     let { token: client1Token, id: client1Id }  = server.registerClient();
     let { key: client2Token, id: client2Id }  = server.registerClient();
     server.registerRelayChannel(client1Id, client2Id);
-    console.log(server);
-    server.close();
-    testing.success(callback);
+    server.close(testing.success.bind(null, callback));
   });
 }
 
@@ -50,8 +45,7 @@ function test_registerRelayConnectionNeitherExisting(port, callback) {
       server.registerRelayChannel('id that does not exist', 'second id that does not exist');
     });
     testing.assert(didExceptionOccur);
-    server.close();
-    testing.success(callback);
+    server.close(testing.success.bind(null, callback));
   });
 }
 
@@ -66,8 +60,7 @@ function test_registerRelayConnectionOneExisting(port, callback) {
     });
     testing.assert(exceptionOccurredFirstExisting);
     testing.assert(exceptionOccurredSecondExisting);
-    server.close();
-    testing.success(callback);
+    server.close(testing.success.bind(null, callback));
   });
 }
 

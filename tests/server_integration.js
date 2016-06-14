@@ -17,22 +17,17 @@ let tests = [
 module.exports = tests;
 
 function test_WSConnect(port, callback) {
-  let server = new RelayServer({ port });
-
-  server.on('listening', () => {
+  let server = new RelayServer({ port }, () => {
     let ws = new WebSocket('ws://localhost:' + port);
 
     ws.on('open', () => {
-      server.close();
-      testing.success(callback);
+      server.close(testing.success.bind(null, callback));
     });
   });
 }
 
 function test_oneClientAuthentication(port, callback) {
-  let server = new RelayServer({ port });
-
-  server.on('listening', () => {
+  let server = new RelayServer({ port }, () => {
     let client = server.registerClient();
     let ws = new WebSocket('ws://localhost:' + port);
 
@@ -43,17 +38,14 @@ function test_oneClientAuthentication(port, callback) {
           token: client.token
         }
       }), undefined, () => {
-        server.close();
-        testing.success(callback);
+        server.close(testing.success.bind(null, callback));
       });
     });
   });
 }
 
 function test_relay(port, callback) {
-  let server = new RelayServer({ port: port });
-
-  server.on('listening', () => {
+  let server = new RelayServer({ port: port }, () => {
     let client1 = server.registerClient();
     let client2 = server.registerClient();
     server.registerRelayChannel(client1.id, client2.id);
@@ -114,17 +106,14 @@ function test_relay(port, callback) {
 
     Promise.all([relay1P, relay2P])
       .then(() => {
-        server.close();
-        testing.success(callback);
+        server.close(testing.success.bind(null, callback));
       });
   });
 }
 
 function test_incorrectToken(port, callback) {
-  let server = new RelayServer({port: port});
-  let client = server.registerClient();
-
-  server.on('listening', () => {
+  let server = new RelayServer({port: port}, () => {
+    let client = server.registerClient();
     let ws = new WebSocket('ws://localhost:' + port);
     ws.on('open', () => {
       ws.send(JSON.stringify({
@@ -135,10 +124,10 @@ function test_incorrectToken(port, callback) {
       }));
     });
   });
+
   server.on('error', (error) => {
-    server.close();
     testing.assertEquals(error, 'incorrect token');
-    testing.success(callback);
+    server.close(testing.success.bind(null, callback));
   });
 }
 
@@ -146,9 +135,7 @@ function test_authorizeAllChannels(port, callback) {
   let server = new RelayServer({
     port: port,
     authorizeAllChannels: true
-  });
-
-  server.on('listening', () => {
+  }, () => {
     let client1 = server.registerClient();
     let client2 = server.registerClient();
 
@@ -208,25 +195,22 @@ function test_authorizeAllChannels(port, callback) {
 
     Promise.all([relay1P, relay2P])
       .then(() => {
-        server.close();
-        testing.success(callback);
+        server.close(testing.success.bind(null, callback));
       });
   });
 }
 
 function test_invalidJSON(port, callback) {
-  let server = new RelayServer({port: port});
-
-  server.on('listening', () => {
+  let server = new RelayServer({port: port}, () => {
     let ws = new WebSocket('ws://localhost:' + port);
     ws.on('open', () => {
       ws.send('{{}');
     });
   });
+
   server.on('error', (error) => {
-    server.close();
     testing.assertEquals(error, 'invalid JSON');
-    testing.success(callback);
+    server.close(testing.success.bind(null, callback));
   });
 }
 
